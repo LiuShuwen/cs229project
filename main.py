@@ -20,4 +20,3 @@ print "Took %s seconds" % (end - start)
 
 print "Number of songs %s" % r.numSongs
 print "Number of users %s" % r.numUsers
-print r.userSongMatrix
