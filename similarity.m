@@ -1,3 +1,5 @@
+%% Reading in data
+
 load UserSongSparseMatrix100000.txt
 
 % Count = count matrix
@@ -20,6 +22,8 @@ InvMaxSongCount = diag(max(Count,[],2).^-1);
 % Entries: SongCount/max(SongCount for each user)
 % Size: numUsers * numSongs
 Rating = InvMaxSongCount*Count;
+
+%% Computing Cosine Similarity
 
 % UserNormalize = diagonal user normalization matrix
 % Entries: Inverse of norm of row for each user
