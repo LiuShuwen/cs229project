@@ -44,13 +44,13 @@ for line in f:
   if linesRead >= numTriplets:
     break
 
-numSongs = songIndex + 1
-numUsers = userIndex + 1
+numSongs = songIndex
+numUsers = userIndex
 
 for i in range(len(entries)):
     matrix_file.write(str(rows[i]+1) + "\t" + str(columns[i]+1) + "\t" + str(entries[i]) + "\n")
 
-matrix_file.write(str(numUsers) + "\t" + str(numSongs) + "\t" + str(0.000000) + "\n")
+matrix_file.write(str(numUsers-1) + "\t" + str(numSongs-1) + "\t" + str(0.000000) + "\n")
 
 matrix_file.close()
 f.close()
