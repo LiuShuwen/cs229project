@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.sparse import csr_matrix
+import scipy.sparse as sparse
 
 def meanAveragePrecision(M, predictions, verbose = False):
     """
