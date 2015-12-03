@@ -67,7 +67,8 @@ class Data:
                 self.rows = rows
                 self.columns = columns
                 self.entries = entries
-                self.R = sparse.coo_matrix((entries, (rows, columns)), (self.numUsers, self.numSongs), dtype = np.float)
+                #self.R = sparse.coo_matrix((entries, (rows, columns)), (self.numUsers, self.numSongs), dtype = np.float)
+                self.R = sparse.coo_matrix((entries, (rows, columns)), (self.numUsers, self.numSongs), dtype = np.float).tocsr()
                 # reset everything to zero to read in the hidden matrix
                 rows = []
                 columns = []
