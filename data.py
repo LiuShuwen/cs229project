@@ -29,6 +29,8 @@ class Data:
         columns = []
         entries = []
 
+        maxLines = numTriplets
+
         for inputFile in [inputTrainingFile, inputTestFile, inputHiddenTestFile]:
             linesRead = 0
             f = open(inputFile)
@@ -51,11 +53,12 @@ class Data:
               entries.append(int(songCount))
 
               linesRead += 1
-              if linesRead >= numTriplets:
+              if linesRead >= maxLines:
                 break
 
             if inputFile == inputTrainingFile:
                 self.numUsersInTraining = userIndex
+                maxLines = numTripletsTest
 
             if inputFile == inputTestFile:
                 self.numSongs = songIndex
