@@ -3,7 +3,7 @@ import numpy as np
 import scipy.sparse as sparse
 
 class Data:
-    def __init__(self, inputFile, numTriplets, inputTestFile, numTripletsTest):
+    def __init__(self, inputTrainingFile, numTriplets, inputTestFile, inputHiddenTestFile, numTripletsTest):
         self.userIdToIndex = {} # Key: userid, Value: Row in matrix
         self.songIdToIndex = {} # Key: songid, Value: Column in matrix
         self.numUsers = 0
@@ -14,11 +14,14 @@ class Data:
         self.columns = []
         self.entries = []
         self.R = None
-        self.loadData(inputFile, numTriplets, inputTestFile, numTripletsTest)
+        self.R_hidden = None
+        self.loadData(inputTrainingFile, numTriplets, inputTestFile, inputHiddenTestFile, numTripletsTest)
 
-    def loadData(self, inputFile, numTriplets, inputTestFile, numTripletsTest):
+    def loadData(self, inputTrainingFile, numTriplets, inputTestFile, inputHiddenTestFile, numTripletsTest):
         """
         Method to load in the data.
+        Loads in the training set and the visible half of playlist into Matrix R.
+        Loads in the hidden half of the playlist into Matrix R_hidden
         """
         userIndex = 0
         songIndex = 0
@@ -26,67 +29,51 @@ class Data:
         columns = []
         entries = []
 
-        linesRead = 0
-        f = open(inputFile)
+        for inputFile in [inputTrainingFile, inputTestFile, inputHiddenTestFile]:
+            linesRead = 0
+            f = open(inputFile)
 
-        for line in f:
-          userid, song, songCount = line.strip().split('\t')
+            for line in f:
+              userid, song, songCount = line.strip().split('\t')
 
-          # Fill in indices
-          if song not in self.songIdToIndex:
-            self.songIdToIndex[song] = songIndex
-            songIndex += 1
+              # Fill in indices
+              if song not in self.songIdToIndex:
+                self.songIdToIndex[song] = songIndex
+                songIndex += 1
 
-          if userid not in self.userIdToIndex:
-            self.userIdToIndex[userid] = userIndex
-            userIndex += 1
+              if userid not in self.userIdToIndex:
+                self.userIdToIndex[userid] = userIndex
+                userIndex += 1
 
-          # Fill in rows, columns and entries
-          rows.append(self.userIdToIndex[userid])
-          columns.append(self.songIdToIndex[song])
-          entries.append(int(songCount))
+              # Fill in rows, columns and entries
+              rows.append(self.userIdToIndex[userid])
+              columns.append(self.songIdToIndex[song])
+              entries.append(int(songCount))
 
-          linesRead += 1
-          if linesRead >= numTriplets:
-            break
+              linesRead += 1
+              if linesRead >= numTriplets:
+                break
 
-        self.numUsersInTraining = userIndex
+            if inputFile == inputTrainingFile:
+                self.numUsersInTraining = userIndex
 
-        f.close()
+            if inputFile == inputTestFile:
+                self.numSongs = songIndex
+                self.numUsers = userIndex
+                self.numNonZeros = len(entries)
+                self.rows = rows
+                self.columns = columns
+                self.entries = entries
+                self.R = sparse.coo_matrix((entries, (rows, columns)), (self.numUsers, self.numSongs), dtype = np.float)
+                # reset everything to zero to read in the hidden matrix
+                rows = []
+                columns = []
+                entries = []
 
-        # Read in half of the user histories
-        linesRead = 0
-        f = open(inputTestFile)
+            if inputFile == inputHiddenTestFile:
+                self.R_hidden = sparse.coo_matrix((entries, (rows, columns)), (userIndex, songIndex), dtype = np.float)
 
-        for line in f:
-          userid, song, songCount = line.strip().split('\t')
-
-          # Fill in indices
-          if song not in self.songIdToIndex:
-            self.songIdToIndex[song] = songIndex
-            songIndex += 1
-
-          if userid not in self.userIdToIndex:
-            self.userIdToIndex[userid] = userIndex
-            userIndex += 1
-
-          # Fill in rows, columns and entries
-          rows.append(self.userIdToIndex[userid])
-          columns.append(self.songIdToIndex[song])
-          entries.append(int(songCount))
-
-          linesRead += 1
-          if linesRead >= numTriplets:
-            break
-
-        self.numSongs = songIndex
-        self.numUsers = userIndex
-        self.numNonZeros = len(entries)
-        self.rows = rows
-        self.columns = columns
-        self.entries = entries
-
-        self.R = sparse.coo_matrix((entries, (rows, columns)), (self.numUsers, self.numSongs), dtype = np.float)
+            f.close()
 
     def getInfo(self):
         """

@@ -7,21 +7,22 @@ import time
 ## IMPORT DATA
 
 # Analysing command line arguments
-if len(sys.argv) < 4:
+if len(sys.argv) < 5:
   print 'Usage:'
-  print '  python %s <triplets training file> <number of triplets> <triplets prediction file> <number of triplets>' % sys.argv[0]
+  print '  python %s <triplets training file> <number of triplets> <triplets visible history file> <triplets hidden history file> <number of triplets>' % sys.argv[0]
   exit()
 
-inputFile = sys.argv[1]
+inputTrainingFile = sys.argv[1]
 numTriplets = int(sys.argv[2])
 inputFileTest = sys.argv[3]
-numTripletsTest = int(sys.argv[4])
+inputFileHiddenTest = sys.argv[4]
+numTripletsTest = int(sys.argv[5])
 
 start = time.time()
 
 print "Loading Data..."
 
-ratings = data.Data(inputFile, numTriplets, inputFileTest, numTripletsTest)
+ratings = data.Data(inputTrainingFile, numTriplets, inputFileTest, inputFileHiddenTest, numTripletsTest)
 
 end = time.time()
 
@@ -47,6 +48,8 @@ numMaxIters = 10
 print "Training Latent Factor Model..."
 
 def getObjective():
+    #print ratings.R.shape, Q.shape, P.transpose().shape
+    #objective = np.linalg.norm(ratings.R - np.dot(Q*P.transpose()))**2
     objective = 0
     for index in range(ratings.numNonZeros):
         user = ratings.rows[index]
