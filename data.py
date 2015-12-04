@@ -13,15 +13,17 @@ class Data:
         self.rows = []
         self.columns = []
         self.entries = []
-        self.R = None
-        self.R_hidden = None
+        self.C = None # Counts matrix
+        self.R = None # Rating matrix
+        self.C_hidden = None
         self.loadData(inputTrainingFile, numTriplets, inputTestFile, inputHiddenTestFile, numTripletsTest)
+        self.setRatingType()
 
     def loadData(self, inputTrainingFile, numTriplets, inputTestFile, inputHiddenTestFile, numTripletsTest):
         """
         Method to load in the data.
-        Loads in the training set and the visible half of playlist into Matrix R.
-        Loads in the hidden half of the playlist into Matrix R_hidden
+        Loads in the training set and the visible half of playlist into Matrix C.
+        Loads in the hidden half of the playlist into Matrix C_hidden
         """
         userIndex = 0
         songIndex = 0
@@ -67,17 +69,38 @@ class Data:
                 self.rows = rows
                 self.columns = columns
                 self.entries = entries
-                #self.R = sparse.coo_matrix((entries, (rows, columns)), (self.numUsers, self.numSongs), dtype = np.float)
-                self.R = sparse.coo_matrix((entries, (rows, columns)), (self.numUsers, self.numSongs), dtype = np.float).tocsr()
+                self.C = sparse.coo_matrix((entries, (rows, columns)), (self.numUsers, self.numSongs), dtype = np.float).tocsr()
                 # reset everything to zero to read in the hidden matrix
                 rows = []
                 columns = []
                 entries = []
 
             if inputFile == inputHiddenTestFile:
-                self.R_hidden = sparse.coo_matrix((entries, (rows, columns)), (userIndex, songIndex), dtype = np.float)
+                self.C_hidden = sparse.coo_matrix((entries, (rows, columns)), (userIndex, songIndex), dtype = np.float)
 
             f.close()
+
+    def setRatingType(self, ratingType=2):
+        """
+        Transform R to a matrix of "ratings" rather than song counts.
+        Type parameters determines how this is done:
+        1 : Divide each user count by that users maximum count
+        2 : Normalize user counts (i.e. divide each entry by sum of this user's counts)
+        """
+        if ratingType == 1:
+            maxVec = self.C.max(axis=1).transpose()
+            #invMaxVec = 1./
+            print maxVec
+            self.R = np.dot(np.diag(maxVec), self.C)
+        if ratingType == 2:
+            sumVec = self.C.sum(axis=1).transpose()
+            print sumVec
+            invSumVec = 1./sumVec
+            print invSumVec
+            sumDiag = sparse.diags(invSumVec.tolist()[0], 0)
+            self.R = sumDiag * self.C
+
+
 
     def getInfo(self):
         """
