@@ -84,9 +84,12 @@ class Data:
         """
         Transform R to a matrix of "ratings" rather than song counts.
         Type parameters determines how this is done:
+        0 : Song counts
         1 : Divide each user count by that users maximum count
         2 : Normalize user counts (i.e. divide each entry by sum of this user's counts)
         """
+        if ratingType == 0:
+            self.R = self.C.tocsc()
         if ratingType == 1:
             maxVec = self.C.max(axis=1).transpose()
             invMaxVec = 1./maxVec.todense()
@@ -100,8 +103,6 @@ class Data:
             sumDiag = sparse.diags(invSumVec.tolist()[0], 0)
             self.R = sumDiag * self.C
             self.R.tocsc()
-
-
 
     def getInfo(self):
         """
