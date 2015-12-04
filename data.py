@@ -76,7 +76,7 @@ class Data:
                 entries = []
 
             if inputFile == inputHiddenTestFile:
-                self.C_hidden = sparse.coo_matrix((entries, (rows, columns)), (userIndex, songIndex), dtype = np.float)
+                self.C_hidden = sparse.coo_matrix((entries, (rows, columns)), (userIndex, songIndex), dtype = np.float).tocsc()
 
             f.close()
 
