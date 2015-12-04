@@ -80,7 +80,7 @@ class Data:
 
             f.close()
 
-    def setRatingType(self, ratingType=2):
+    def setRatingType(self, ratingType=1):
         """
         Transform R to a matrix of "ratings" rather than song counts.
         Type parameters determines how this is done:
@@ -89,16 +89,17 @@ class Data:
         """
         if ratingType == 1:
             maxVec = self.C.max(axis=1).transpose()
-            #invMaxVec = 1./
-            print maxVec
-            self.R = np.dot(np.diag(maxVec), self.C)
+            invMaxVec = 1./maxVec.todense()
+            maxDiag = sparse.diags(invMaxVec.tolist()[0], 0)
+            self.R = maxDiag * self.C
+            self.R.tocsc()
+
         if ratingType == 2:
             sumVec = self.C.sum(axis=1).transpose()
-            print sumVec
             invSumVec = 1./sumVec
-            print invSumVec
             sumDiag = sparse.diags(invSumVec.tolist()[0], 0)
             self.R = sumDiag * self.C
+            self.R.tocsc()
 
 
 
