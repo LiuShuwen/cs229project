@@ -110,5 +110,5 @@ class Data:
         """
         print "Number of songs: ", self.numSongs
         print "Number of users: ", self.numUsers
-        print "Number of users you need to predict for: ", self.numUsersInTraining
+        print "Number of users you need to predict for: ", self.numUsers - self.numUsersInTraining
         print "Number of triplets: ", self.numNonZeros
