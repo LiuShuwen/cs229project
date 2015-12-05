@@ -40,8 +40,8 @@ k = 10 # number of latent factors
 # /!\ with the number of iterations??
 etaX = .005 # learning rate for X
 etaY = .005 # learning rate for Y
-lambdaX = 0.01 # regularization for X
-lambdaY = 0.01 # regularization for Y
+lambdaX = 0.05 # regularization for X
+lambdaY = 0.05 # regularization for Y
 
 # initializing the matrices X and Y using the SVD with k largest singular values
 X, s, vt = scipy.sparse.linalg.svds(ratings.R, k)
@@ -49,12 +49,12 @@ X, s, vt = scipy.sparse.linalg.svds(ratings.R, k)
 X = X.transpose()
 Y = np.dot(np.diag(s), vt) # need to form diag(s)? seems kind of wasteful
 
+print "Done initializing the factor matrices X and Y"
+
 #X = np.random.rand(ratings.numUsers, k) # u x k
 #Y = np.random.rand(k, ratings.numSongs) # k x i
 
-numMaxIters = 100
-
-print "Training Latent Factor Model..."
+numMaxIters = 20
 
 def getObjective():
     objective = 0
@@ -67,9 +67,11 @@ def getObjective():
     return objective
 
 oldObj = getObjective()
-tolerance = 0.0005
+tolerance = 0.005
 
 # alternating least squares to get optimal P and Q
+start = time.time()
+print "Training Latent Factor Model..."
 
 for iteration in range(numMaxIters):
   #if not iteration % 10:
@@ -103,20 +105,23 @@ for iteration in range(numMaxIters):
     break
   oldObj = newObj
 
+end = time.time()
+print "Done performing ALS on X and Y in %d iterations and %f seconds" % (iteration, end - start)
+
 # prediction time baby
+print "Predicting unseen songs"
 scores = np.dot(X[:,ratings.numUsersInTraining:].transpose(), Y)
 
 # how to predict? first, sort the scores for each test user i.e. row by song score
 rankings = np.argsort(scores)
 
-correctCount = 0
-testIdx = 0
 for testUser in range(ratings.numUsersInTraining, ratings.numUsers):
-  for song in range(ratings.numUsers):
-    if ratings.C_hidden[testUser, rankings[testIdx,-song]] > 0:
+  correctCount = 0
+  testIdx = 0
+  for song in range(ratings.numSongs):
+    if ratings.C_hidden[testUser, rankings[testIdx,-song-1]] > 0:
       correctCount += 1
-    if correctCount > 4:
+    if correctCount >= 3:
       break
   testIdx += 1
-  
-print "We have successfully predicted %d songs" % correctCount
+  print "We have successfully predicted %d songs using %d guesses" % (correctCount, song)
