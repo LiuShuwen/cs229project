@@ -76,6 +76,7 @@ class Data:
                 entries = []
 
             if inputFile == inputHiddenTestFile:
+                self.numSongsUnseen = songIndex - self.numSongs
                 self.C_hidden = sparse.coo_matrix((entries, (rows, columns)), (userIndex, songIndex), dtype = np.float).tocsc()
 
             f.close()
@@ -111,4 +112,5 @@ class Data:
         print "Number of songs: ", self.numSongs
         print "Number of users: ", self.numUsers
         print "Number of users you need to predict for: ", self.numUsers - self.numUsersInTraining
+        print "Number of songs that have never been seen in training: ", self.numSongsUnseen
         print "Number of triplets: ", self.numNonZeros
