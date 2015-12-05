@@ -95,14 +95,14 @@ class Data:
             invMaxVec = 1./maxVec.todense()
             maxDiag = sparse.diags(invMaxVec.tolist()[0], 0)
             self.R = maxDiag * self.C
-            self.R.tocsc()
+            self.R = self.R.tocsc()
 
         if ratingType == 2:
             sumVec = self.C.sum(axis=1).transpose()
             invSumVec = 1./sumVec
             sumDiag = sparse.diags(invSumVec.tolist()[0], 0)
             self.R = sumDiag * self.C
-            self.R.tocsc()
+            self.R = self.R.tocsc()
 
     def getInfo(self):
         """
