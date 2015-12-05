@@ -35,13 +35,13 @@ print ratings.getInfo()
 ## TRAIN A LATENT FACTOR MODEL
 
 # Parameters
-k = 10 # number of latent factors
+k = 15 # number of latent factors
 # /!\ need to make the learning rates a function of the number of users/items; make it decay
 # /!\ with the number of iterations??
 etaX = .005 # learning rate for X
 etaY = .005 # learning rate for Y
-lambdaX = 0.05 # regularization for X
-lambdaY = 0.05 # regularization for Y
+lambdaX = 0.1 # regularization for X
+lambdaY = 0.1 # regularization for Y
 
 # initializing the matrices X and Y using the SVD with k largest singular values
 X, s, vt = scipy.sparse.linalg.svds(ratings.R, k)
@@ -67,11 +67,11 @@ def getObjective():
     return objective
 
 oldObj = getObjective()
-tolerance = 0.005
+tolerance = 0.0005
 
 # alternating least squares to get optimal P and Q
 start = time.time()
-print "Training Latent Factor Model..."
+print "Training Latent Factor Model with %d factors and %f, %f as regularization..." % (k, lambdaX, lambdaY)
 
 for iteration in range(numMaxIters):
   #if not iteration % 10:
@@ -115,13 +115,18 @@ scores = np.dot(X[:,ratings.numUsersInTraining:].transpose(), Y)
 # how to predict? first, sort the scores for each test user i.e. row by song score
 rankings = np.argsort(scores)
 
+averageToFive = 0
 for testUser in range(ratings.numUsersInTraining, ratings.numUsers):
   correctCount = 0
   testIdx = 0
   for song in range(ratings.numSongs):
     if ratings.C_hidden[testUser, rankings[testIdx,-song-1]] > 0:
       correctCount += 1
-    if correctCount >= 3:
+    if correctCount >= 5:
+      averageToFive += song
       break
   testIdx += 1
-  print "We have successfully predicted %d songs using %d guesses" % (correctCount, song)
+
+averageToFive /= (ratings.numUsers - ratings.numUsersInTraining + 1)
+
+print "Average to get 5 songs is %f guesses" % averageToFive
