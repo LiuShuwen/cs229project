@@ -2,7 +2,7 @@
 Script used to convert data into sparse matrix format that
 can easily be imported into MATLAB.
 Use like this
-python convertToSparseMatrix.py ../../../../../data/train_triplets.txt 1000 ../../../../../data/eval/year1_test_triplets_hidden.txt 100
+python convertToSparseMatrix.py ../../../../../data/train_triplets.txt 1000 ../../../../../data/eval/year1_test_triplets_visible.txt ../../../../../data/eval/year1_test_triplets_hidden.txt 100
 """
 import sys
 import time
@@ -73,7 +73,7 @@ for inputFile in [inputTrainingFile, inputTestFile, inputHiddenTestFile]:
         matrix_file = open('UserSongSparseMatrix' + str(numTriplets) + '_' + str(numTripletsTest) + '.txt', 'w')
         for i in range(len(entries)):
             matrix_file.write(str(rows[i]+1) + "\t" + str(columns[i]+1) + "\t" + str(entries[i]) + "\n")
-        matrix_file.write(str(numUsers-1) + "\t" + str(numSongs-1) + "\t" + str(0.000000) + "\n")
+        #matrix_file.write(str(numUsers-1) + "\t" + str(numSongs-1) + "\t" + str(0.000000) + "\n")
         matrix_file.close()
 
         # reset everything to zero to read in the hidden matrix
@@ -86,7 +86,7 @@ for inputFile in [inputTrainingFile, inputTestFile, inputHiddenTestFile]:
         matrix_file_test = open('UserSongSparseMatrixTest' + str(numTriplets) + '_' + str(numTripletsTest) + '.txt', 'w')
         for i in range(len(entries)):
             matrix_file_test.write(str(rows[i]+1) + "\t" + str(columns[i]+1) + "\t" + str(entries[i]) + "\n")
-        matrix_file_test.write(str(userIndex-1) + "\t" + str(songIndex-1) + "\t" + str(0.000000) + "\n")
+        #matrix_file_test.write(str(userIndex-1) + "\t" + str(songIndex-1) + "\t" + str(0.000000) + "\n")
         matrix_file_test.close()
 
     f.close()
