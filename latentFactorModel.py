@@ -54,7 +54,7 @@ print "Done initializing the factor matrices X and Y"
 #X = np.random.rand(ratings.numUsers, k) # u x k
 #Y = np.random.rand(k, ratings.numSongs) # k x i
 
-numMaxIters = 20
+numMaxIters = 12
 
 def getObjective():
     objective = 0
@@ -66,7 +66,10 @@ def getObjective():
     objective += lambdaX*np.linalg.norm(X)**2 + lambdaY*np.linalg.norm(Y)**2
     return objective
 
+#start = time.time()
 oldObj = getObjective()
+#end = time.time()
+#print "Took %f seconds to get objective" % (end - start)
 tolerance = 0.0005
 
 # alternating least squares to get optimal P and Q
@@ -75,7 +78,8 @@ print "Training Latent Factor Model with %d factors and %f, %f as regularization
 
 for iteration in range(numMaxIters):
   #if not iteration % 10:
-  print "Iteration %d, objective %f" % (iteration, oldObj)
+  #print "Iteration %d, objective %f" % (iteration, oldObj)
+  print "Iteration %d" % iteration
   # updating X first
   ratingIdx = 0
   for user in range(ratings.numUsers):
@@ -100,10 +104,10 @@ for iteration in range(numMaxIters):
       W += np.outer(X[:, user], X[:, user])
     Y[:, item] = scipy.linalg.solve(W, weighedSum)
   
-  newObj = getObjective()  
-  if abs(newObj - oldObj)/oldObj < tolerance:
-    break
-  oldObj = newObj
+  #newObj = getObjective()  
+  #if abs(newObj - oldObj)/oldObj < tolerance:
+  #  break
+  #oldObj = newObj
 
 end = time.time()
 print "Done performing ALS on X and Y in %d iterations and %f seconds" % (iteration, end - start)
