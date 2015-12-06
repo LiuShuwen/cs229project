@@ -77,7 +77,7 @@ class Data:
 
             if inputFile == inputHiddenTestFile:
                 self.numSongsUnseen = songIndex - self.numSongs
-                self.C_hidden = sparse.coo_matrix((entries, (rows, columns)), (userIndex, songIndex), dtype = np.float).tocsc()
+                self.C_hidden = sparse.coo_matrix((entries, (rows, columns)), (userIndex, songIndex), dtype = np.float).tocsr()
 
             f.close()
 
@@ -114,3 +114,19 @@ class Data:
         print "Number of users you need to predict for: ", self.numUsers - self.numUsersInTraining
         print "Number of songs that have never been seen in training: ", self.numSongsUnseen
         print "Number of triplets: ", self.numNonZeros
+    
+    def averagePrecision(self, user, predictions, k = 500):
+        """
+        Computes the average precision at k for |user|.
+        |predictions| should be a list of song ID's
+        """
+        score, numHits = 0., 0.
+        numHidden = (self.C_hidden.indptr[user + 1] - self.C_hidden.indptr[user])
+        
+        for i, p in enumerate(predictions):
+            # check if p is actually present
+            if self.C_hidden[user, p] > 0:
+                numHits += 1.
+                score += numHits/(i + 1.)
+            
+        return score/min(numHidden, k)

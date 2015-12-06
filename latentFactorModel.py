@@ -40,8 +40,8 @@ k = 15 # number of latent factors
 # /!\ with the number of iterations??
 etaX = .005 # learning rate for X
 etaY = .005 # learning rate for Y
-lambdaX = 0.1 # regularization for X
-lambdaY = 0.1 # regularization for Y
+lambdaX = 2 # regularization for X
+lambdaY = 2 # regularization for Y
 
 # initializing the matrices X and Y using the SVD with k largest singular values
 X, s, vt = scipy.sparse.linalg.svds(ratings.R, k)
@@ -54,7 +54,7 @@ print "Done initializing the factor matrices X and Y"
 #X = np.random.rand(ratings.numUsers, k) # u x k
 #Y = np.random.rand(k, ratings.numSongs) # k x i
 
-numMaxIters = 12
+numMaxIters = 20
 
 def getObjective():
     objective = 0
@@ -66,10 +66,7 @@ def getObjective():
     objective += lambdaX*np.linalg.norm(X)**2 + lambdaY*np.linalg.norm(Y)**2
     return objective
 
-#start = time.time()
 oldObj = getObjective()
-#end = time.time()
-#print "Took %f seconds to get objective" % (end - start)
 tolerance = 0.0005
 
 # alternating least squares to get optimal P and Q
@@ -78,8 +75,8 @@ print "Training Latent Factor Model with %d factors and %f, %f as regularization
 
 for iteration in range(numMaxIters):
   #if not iteration % 10:
-  #print "Iteration %d, objective %f" % (iteration, oldObj)
-  print "Iteration %d" % iteration
+  print "Iteration %d, objective %f" % (iteration, oldObj)
+  #print "Iteration %d" % iteration
   # updating X first
   ratingIdx = 0
   for user in range(ratings.numUsers):
@@ -104,10 +101,10 @@ for iteration in range(numMaxIters):
       W += np.outer(X[:, user], X[:, user])
     Y[:, item] = scipy.linalg.solve(W, weighedSum)
   
-  #newObj = getObjective()  
-  #if abs(newObj - oldObj)/oldObj < tolerance:
-  #  break
-  #oldObj = newObj
+  newObj = getObjective()  
+  if abs(newObj - oldObj)/oldObj < tolerance:
+    break
+  oldObj = newObj
 
 end = time.time()
 print "Done performing ALS on X and Y in %d iterations and %f seconds" % (iteration, end - start)
@@ -117,20 +114,24 @@ print "Predicting unseen songs"
 scores = np.dot(X[:,ratings.numUsersInTraining:].transpose(), Y)
 
 # how to predict? first, sort the scores for each test user i.e. row by song score
-rankings = np.argsort(scores)
+numPredictions = 500
+#rankings = np.argsort(scores)
 
-averageToFive = 0
+start = time.time()
+
+mAP = 0.
+testIdx = 0
 for testUser in range(ratings.numUsersInTraining, ratings.numUsers):
-  correctCount = 0
-  testIdx = 0
-  for song in range(ratings.numSongs):
-    if ratings.C_hidden[testUser, rankings[testIdx,-song-1]] > 0:
-      correctCount += 1
-    if correctCount >= 5:
-      averageToFive += song
-      break
+  print testUser
+  ind = np.argpartition(scores[testIdx, :], -numPredictions)[-numPredictions:]
+  predictions = ind[np.argsort(scores[testIdx, ind])]
+  mAP += ratings.averagePrecision(testUser, predictions, numPredictions)
   testIdx += 1
+  
+end = time.time()
 
-averageToFive /= (ratings.numUsers - ratings.numUsersInTraining + 1)
+mAP /= (ratings.numUsers - ratings.numUsersInTraining + 1)
 
-print "Average to get 5 songs is %f guesses" % averageToFive
+print "Mean Average Precision at %d: %f; computed in %f" % (numPredictions, mAP, end - start)
+
+#python -i .\latentFactorModel.py ..\..\data\train_triplets.txt 3000000  ..\..\data\eval\year1_test_triplets_visible.txt ..\..\data\eval\year1_test_triplets_hidden.txt 10000
