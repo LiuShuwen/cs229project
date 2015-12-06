@@ -31,7 +31,6 @@ print "Took %s seconds" % (end - start)
 
 print ratings.getInfo()
 
-
 ## TRAIN A LATENT FACTOR MODEL
 
 # Parameters
@@ -114,7 +113,7 @@ print "Predicting unseen songs"
 scores = np.dot(X[:,ratings.numUsersInTraining:].transpose(), Y)
 
 # how to predict? first, sort the scores for each test user i.e. row by song score
-numPredictions = 500
+numPredictions = 100
 #rankings = np.argsort(scores)
 
 start = time.time()
@@ -122,7 +121,6 @@ start = time.time()
 mAP = 0.
 testIdx = 0
 for testUser in range(ratings.numUsersInTraining, ratings.numUsers):
-  print testUser
   ind = np.argpartition(scores[testIdx, :], -numPredictions)[-numPredictions:]
   predictions = ind[np.argsort(scores[testIdx, ind])]
   mAP += ratings.averagePrecision(testUser, predictions, numPredictions)
@@ -130,7 +128,7 @@ for testUser in range(ratings.numUsersInTraining, ratings.numUsers):
   
 end = time.time()
 
-mAP /= (ratings.numUsers - ratings.numUsersInTraining + 1)
+mAP /= (testIdx)
 
 print "Mean Average Precision at %d: %f; computed in %f" % (numPredictions, mAP, end - start)
 
