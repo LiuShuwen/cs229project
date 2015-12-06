@@ -1,6 +1,7 @@
 ## We need a data class for this shiz
 import numpy as np
 import scipy.sparse as sparse
+import sys
 
 class Data:
     def __init__(self, inputTrainingFile, numTrainingUsers, inputTestFile, inputHiddenTestFile, numTestUsers):
@@ -75,9 +76,11 @@ class Data:
                 rows = []
                 columns = []
                 entries = []
+                threshold = sys.maxint
 
             if inputFile == inputHiddenTestFile:
                 self.numSongsUnseen = songIndex - self.numSongs
+                print entries
                 self.C_hidden = sparse.coo_matrix((entries, (rows, columns)), (userIndex, songIndex), dtype = np.float).tocsr()
 
             f.close()
