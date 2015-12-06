@@ -3,12 +3,12 @@ import numpy as np
 import scipy.sparse as sparse
 
 class Data:
-    def __init__(self, inputTrainingFile, numTriplets, inputTestFile, inputHiddenTestFile, numTripletsTest):
+    def __init__(self, inputTrainingFile, numTrainingUsers, inputTestFile, inputHiddenTestFile, numTestUsers):
         self.userIdToIndex = {} # Key: userid, Value: Row in matrix
         self.songIdToIndex = {} # Key: songid, Value: Column in matrix
-        self.numUsers = 0
+        self.numUsers = numTrainingUsers + numTestUsers
         self.numSongs = 0
-        self.numUsersInTraining = 0
+        self.numUsersInTraining = numTrainingUsers
         self.numNonZeros = 0
         self.rows = []
         self.columns = []
@@ -16,10 +16,10 @@ class Data:
         self.C = None # Counts matrix
         self.R = None # Rating matrix
         self.C_hidden = None
-        self.loadData(inputTrainingFile, numTriplets, inputTestFile, inputHiddenTestFile, numTripletsTest)
+        self.loadData(inputTrainingFile, numTrainingUsers, inputTestFile, inputHiddenTestFile, numTestUsers)
         self.setRatingType()
 
-    def loadData(self, inputTrainingFile, numTriplets, inputTestFile, inputHiddenTestFile, numTripletsTest):
+    def loadData(self, inputTrainingFile, numTrainingUsers, inputTestFile, inputHiddenTestFile, numTestUsers):
         """
         Method to load in the data.
         Loads in the training set and the visible half of playlist into Matrix C.
@@ -31,11 +31,14 @@ class Data:
         columns = []
         entries = []
 
-        maxLines = numTriplets
+        threshold = numTrainingUsers
 
         for inputFile in [inputTrainingFile, inputTestFile, inputHiddenTestFile]:
-            linesRead = 0
             f = open(inputFile)
+
+            # If you are looking at hidden set, need to make sure we don't read in too many or too few lines
+            hiddenFlag = False
+            if inputFile == inputHiddenTestFile: hiddenFlag = True
 
             for line in f:
               userid, song, songCount = line.strip().split('\t')
@@ -46,6 +49,7 @@ class Data:
                 songIndex += 1
 
               if userid not in self.userIdToIndex:
+                if hiddenFlag: break # we are iterating over hidden users so stop this as soon as you see a new user
                 self.userIdToIndex[userid] = userIndex
                 userIndex += 1
 
@@ -54,17 +58,14 @@ class Data:
               columns.append(self.songIdToIndex[song])
               entries.append(int(songCount))
 
-              linesRead += 1
-              if linesRead >= maxLines:
+              if userIndex >= threshold:
                 break
 
             if inputFile == inputTrainingFile:
-                self.numUsersInTraining = userIndex
-                maxLines = numTripletsTest
+                threshold = numTrainingUsers + numTestUsers
 
             if inputFile == inputTestFile:
                 self.numSongs = songIndex
-                self.numUsers = userIndex
                 self.numNonZeros = len(entries)
                 self.rows = rows
                 self.columns = columns
@@ -91,6 +92,7 @@ class Data:
         """
         if ratingType == 0:
             self.R = self.C.tocsc()
+
         if ratingType == 1:
             maxVec = self.C.max(axis=1).transpose()
             invMaxVec = 1./maxVec.todense()
@@ -114,7 +116,9 @@ class Data:
         print "Number of users you need to predict for: ", self.numUsers - self.numUsersInTraining
         print "Number of songs that have never been seen in training: ", self.numSongsUnseen
         print "Number of triplets: ", self.numNonZeros
-    
+        print "Shape of R: ", self.R.shape
+        print "Shape of C_hidden", self.C_hidden.shape
+
     def averagePrecision(self, user, predictions, k = 500):
         """
         Computes the average precision at k for |user|.
@@ -122,11 +126,11 @@ class Data:
         """
         score, numHits = 0., 0.
         numHidden = (self.C_hidden.indptr[user + 1] - self.C_hidden.indptr[user])
-        
+
         for i, p in enumerate(predictions):
             # check if p is actually present
             if self.C_hidden[user, p] > 0:
                 numHits += 1.
                 score += numHits/(i + 1.)
-            
+
         return score/min(numHidden, k)
