@@ -79,7 +79,7 @@ class Data:
 
             if inputFile == inputHiddenTestFile:
                 self.numSongsUnseen = songIndex - self.numSongs
-                self.C_hidden = sparse.coo_matrix((entries, (rows, columns)), (userIndex, songIndex), dtype = np.float).tocsc()
+                self.C_hidden = sparse.coo_matrix((entries, (rows, columns)), (userIndex, songIndex), dtype = np.float).tocsr()
 
             f.close()
 
