@@ -34,7 +34,7 @@ print ratings.getInfo()
 ## TRAIN A LATENT FACTOR MODEL
 
 # Parameters
-k = 15 # number of latent factors
+k = 25 # number of latent factors
 # /!\ need to make the learning rates a function of the number of users/items; make it decay
 # /!\ with the number of iterations??
 etaX = .005 # learning rate for X
@@ -50,10 +50,10 @@ Y = np.dot(np.diag(s), vt) # need to form diag(s)? seems kind of wasteful
 
 print "Done initializing the factor matrices X and Y"
 
-#X = np.random.rand(ratings.numUsers, k) # u x k
+#X = np.random.rand(k, ratings.numUsers) # u x k
 #Y = np.random.rand(k, ratings.numSongs) # k x i
 
-numMaxIters = 20
+numMaxIters = 10
 
 def getObjective():
     objective = 0
@@ -113,7 +113,7 @@ print "Predicting unseen songs"
 scores = np.dot(X[:,ratings.numUsersInTraining:].transpose(), Y)
 
 # how to predict? first, sort the scores for each test user i.e. row by song score
-numPredictions = 100
+numPredictions = 500
 #rankings = np.argsort(scores)
 
 start = time.time()
@@ -121,8 +121,9 @@ start = time.time()
 mAP = 0.
 testIdx = 0
 for testUser in range(ratings.numUsersInTraining, ratings.numUsers):
+  # sorting scores to get |numPredictions| highest song indices
   ind = np.argpartition(scores[testIdx, :], -numPredictions)[-numPredictions:]
-  predictions = ind[np.argsort(scores[testIdx, ind])]
+  predictions = ind[np.argsort(scores[testIdx, ind])][::-1]
   mAP += ratings.averagePrecision(testUser, predictions, numPredictions)
   testIdx += 1
   
