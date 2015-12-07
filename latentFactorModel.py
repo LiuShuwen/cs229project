@@ -8,9 +8,10 @@ import time
 ## IMPORT DATA
 
 # Analysing command line arguments
-if len(sys.argv) < 5:
+if len(sys.argv) < 6:
   print 'Usage:'
-  print '  python %s <triplets training file> <number of triplets> <triplets visible history file> <triplets hidden history file> <number of triplets>' % sys.argv[0]
+  print '  python %s <triplets training file> <number of triplets> <triplets visible history file>' + \
+        '<triplets hidden history file> <number of triplets> <number of factors k>' % sys.argv[0]
   exit()
 
 inputTrainingFile = sys.argv[1]
@@ -18,6 +19,7 @@ numTriplets = int(sys.argv[2])
 inputFileTest = sys.argv[3]
 inputFileHiddenTest = sys.argv[4]
 numTripletsTest = int(sys.argv[5])
+k = int(sys.argv[6])
 
 start = time.time()
 
@@ -34,7 +36,7 @@ print ratings.getInfo()
 ## TRAIN A LATENT FACTOR MODEL
 
 # Parameters
-k = 25 # number of latent factors
+#k = 25 # number of latent factors
 # /!\ need to make the learning rates a function of the number of users/items; make it decay
 # /!\ with the number of iterations??
 etaX = .005 # learning rate for X
@@ -60,7 +62,7 @@ def getObjective():
     for index in range(ratings.numNonZeros):
         user = ratings.rows[index]
         item = ratings.columns[index]
-        rating = ratings.entries[index]
+        rating = ratings.R[user, item]
         objective += (rating - np.dot(X[:, user], Y[:, item]))**2
     objective += lambdaX*np.linalg.norm(X)**2 + lambdaY*np.linalg.norm(Y)**2
     return objective
@@ -73,10 +75,7 @@ start = time.time()
 print "Training Latent Factor Model with %d factors and %f, %f as regularization..." % (k, lambdaX, lambdaY)
 
 for iteration in range(numMaxIters):
-  #if not iteration % 10:
   print "Iteration %d, objective %f" % (iteration, oldObj)
-  #print "Iteration %d" % iteration
-  # updating X first
   ratingIdx = 0
   for user in range(ratings.numUsers):
     oldUser = user
@@ -85,7 +84,6 @@ for iteration in range(numMaxIters):
     while ratingIdx < ratings.numNonZeros and ratings.rows[ratingIdx] == oldUser:
       item = ratings.columns[ratingIdx]
       weighedSum += ratings.R[user, item]*Y[:, item]
-      #V += np.dot(Y[:,item], Y[:, item].transpose()) # outer product method exists?
       V += np.outer(Y[:,item], Y[:,item])
       ratingIdx += 1
     X[:, user] = scipy.linalg.solve(V, weighedSum)
@@ -96,7 +94,6 @@ for iteration in range(numMaxIters):
     W = lambdaY*np.eye(k)
     for userIdx in range(ratings.R.indptr[item], ratings.R.indptr[item + 1]):
       weighedSum += ratings.R[ratings.R.indices[userIdx], item] * X[:, user]
-      #W += np.dot(X[:, user], X[:, user].transpose())
       W += np.outer(X[:, user], X[:, user])
     Y[:, item] = scipy.linalg.solve(W, weighedSum)
   
@@ -112,8 +109,15 @@ print "Done performing ALS on X and Y in %d iterations and %f seconds" % (iterat
 print "Predicting unseen songs"
 scores = np.dot(X[:,ratings.numUsersInTraining:].transpose(), Y)
 
+## baseline: recommend most popular songs
+#scores = ratings.C.sum(0)
+#scores = np.asarray(scores)
+#scores = np.reshape(scores, scores.shape[1])
+
 # how to predict? first, sort the scores for each test user i.e. row by song score
 numPredictions = 500
+#ind = np.argpartition(scores, -numPredictions)[-numPredictions:]
+#predictions = ind[np.argsort(scores[ind])][::-1]
 #rankings = np.argsort(scores)
 
 start = time.time()
