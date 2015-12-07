@@ -4,7 +4,7 @@ import scipy.sparse as sparse
 import sys
 
 class Data:
-    def __init__(self, inputTrainingFile, numTrainingUsers, inputTestFile, inputHiddenTestFile, numTestUsers):
+    def __init__(self, inputTrainingFile, numTrainingUsers, inputTestFile, inputHiddenTestFile, numTestUsers, ratingType=0):
         self.userIdToIndex = {} # Key: userid, Value: Row in matrix
         self.songIdToIndex = {} # Key: songid, Value: Column in matrix
         self.numUsers = numTrainingUsers + numTestUsers
@@ -18,7 +18,7 @@ class Data:
         self.R = None # Rating matrix
         self.C_hidden = None
         self.loadData(inputTrainingFile, numTrainingUsers, inputTestFile, inputHiddenTestFile, numTestUsers)
-        self.setRatingType()
+        self.setRatingType(ratingType)
 
     def loadData(self, inputTrainingFile, numTrainingUsers, inputTestFile, inputHiddenTestFile, numTestUsers):
         """
@@ -83,7 +83,7 @@ class Data:
 
             f.close()
 
-    def setRatingType(self, ratingType=1):
+    def setRatingType(self, ratingType=0):
         """
         Transform R to a matrix of "ratings" rather than song counts.
         Type parameters determines how this is done:
@@ -91,6 +91,7 @@ class Data:
         1 : Divide each user count by that users maximum count
         2 : Normalize user counts (i.e. divide each entry by sum of this user's counts)
         3 : Binary counts (1 if listened, 0 otherwise)
+        4 : Exponential of max normalized
         """
         if ratingType == 0:
             self.R = self.C.tocsc()
@@ -108,6 +109,9 @@ class Data:
             sumDiag = sparse.diags(invSumVec.tolist()[0], 0)
             self.R = sumDiag * self.C
             self.R = self.R.tocsc()
+
+        if ratingType == 3:
+            self.R = self.C.astype(bool).astype(int).tocsc()
 
     def getInfo(self):
         """
