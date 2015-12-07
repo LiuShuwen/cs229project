@@ -113,6 +113,15 @@ class Data:
         if ratingType == 3:
             self.R = self.C.astype(bool).astype(float).tocsc()
 
+        if ratingType == 4:
+            maxVec = self.C.max(axis=1).transpose()
+            invMaxVec = 1./maxVec.todense()
+            maxDiag = sparse.diags(invMaxVec.tolist()[0], 0)
+            self.R = maxDiag * self.C
+            self.R.data = np.exp(self.R.data)
+            self.R = self.R.tocsc()
+
+
     def getInfo(self):
         """
         Prints info about the dataset
