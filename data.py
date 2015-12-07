@@ -4,7 +4,7 @@ import scipy.sparse as sparse
 import sys
 
 class Data:
-    def __init__(self, inputTrainingFile, numTrainingUsers, inputTestFile, inputHiddenTestFile, numTestUsers, ratingType=0):
+    def __init__(self, inputTrainingFile, numTrainingUsers, inputTestFile, inputHiddenTestFile, numTestUsers, ratingType=3):
         self.userIdToIndex = {} # Key: userid, Value: Row in matrix
         self.songIdToIndex = {} # Key: songid, Value: Column in matrix
         self.numUsers = numTrainingUsers + numTestUsers
@@ -79,7 +79,7 @@ class Data:
 
             if inputFile == inputHiddenTestFile:
                 self.numSongsUnseen = songIndex - self.numSongs
-                self.C_hidden = sparse.coo_matrix((entries, (rows, columns)), (userIndex, songIndex), dtype = np.float).tocsr()
+                self.C_hidden = sparse.coo_matrix((entries, (rows, columns)), (userIndex, songIndex), dtype = np.float).tocsc()
 
             f.close()
 
@@ -111,7 +111,7 @@ class Data:
             self.R = self.R.tocsc()
 
         if ratingType == 3:
-            self.R = self.C.astype(bool).astype(int).tocsc()
+            self.R = self.C.astype(bool).astype(float).tocsc()
 
     def getInfo(self):
         """

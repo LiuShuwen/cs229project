@@ -38,24 +38,20 @@ print ratings.getInfo()
 ## COSINE SIMILARITY
 
 # parameters
-alphaFlag = True
-alpha = None
-if alpha == None:
-    alphaFlag = False
+#alpha = 0.5
 
 print "Normalizing R..."
 
 start = time.time()
 
-# Get diagonal matrix of inverse user norms
-normVec = np.sqrt(ratings.R.multiply(ratings.R).sum(1))
+# Get diagonal matrix of inverse item norms
+#normVec = np.sqrt(ratings.R.multiply(ratings.R).sum(0))
 
-# Normalize rows of R (with weighting alpha)
-if alphaFlag:
-    Rn1 = ratings.R.multiply(scipy.sparse.csc_matrix(1/np.power(normVec, 2*alpha)))
-    Rn2 = ratings.R.multiply(scipy.sparse.csc_matrix(1/np.power(normVec, 2*(1 - alpha))))
-else:
-    Rn = normalize(ratings.R, norm='l2', axis=1)
+# Normalize columns of R (with weighting alpha)
+#Rn1 = ratings.R.multiply(scipy.sparse.csc_matrix(1/np.power(normVec, 2*alpha)))
+#Rn2 = ratings.R.multiply(scipy.sparse.csc_matrix(1/np.power(normVec, 2*(1 - alpha))))
+
+Rn = normalize(ratings.R, norm='l2', axis=0)
 
 end = time.time()
 
@@ -65,11 +61,8 @@ start = time.time()
 
 print "Computing Cosine Similarity Matrix..."
 
-# Compute Cosine User-User Matrix
-if alphaFlag:
-    CosineUser = Rn1 * Rn2.transpose()
-else:
-    CosineUser = Rn * Rn.transpose()
+# Compute Cosine Item-Item Matrix
+CosineItem = Rn.transpose() * Rn
 
 end = time.time()
 
@@ -85,7 +78,7 @@ BinaryCount = ratings.C.astype(bool).astype(int)
 print "Computing Scores..."
 
 # Scores
-scores = CosineUser[ratings.numUsersInTraining:,:] * BinaryCount
+scores = BinaryCount[ratings.numUsersInTraining:,:] * CosineItem
 scores = np.asarray(scores.todense())
 
 end = time.time()
