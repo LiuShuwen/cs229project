@@ -42,25 +42,24 @@ class Data:
             if inputFile == inputHiddenTestFile: hiddenFlag = True
 
             for line in f:
-              userid, song, songCount = line.strip().split('\t')
+                userid, song, songCount = line.strip().split('\t')
 
-              # Fill in indices
-              if song not in self.songIdToIndex:
-                self.songIdToIndex[song] = songIndex
-                songIndex += 1
+                # Fill in indices
+                if userid not in self.userIdToIndex:
+                    if userIndex >= threshold: break # If you encounter a new user, and userIndex is equal to your threshold, skip to next file
+                    else:
+                        if hiddenFlag: break # we are iterating over hidden users so stop this as soon as you see a new user
+                        self.userIdToIndex[userid] = userIndex
+                        userIndex += 1
 
-              if userid not in self.userIdToIndex:
-                if hiddenFlag: break # we are iterating over hidden users so stop this as soon as you see a new user
-                self.userIdToIndex[userid] = userIndex
-                userIndex += 1
+                if song not in self.songIdToIndex:
+                    self.songIdToIndex[song] = songIndex
+                    songIndex += 1
 
-              # Fill in rows, columns and entries
-              rows.append(self.userIdToIndex[userid])
-              columns.append(self.songIdToIndex[song])
-              entries.append(int(songCount))
-
-              if userIndex >= threshold:
-                break
+                # Fill in rows, columns and entries
+                rows.append(self.userIdToIndex[userid])
+                columns.append(self.songIdToIndex[song])
+                entries.append(int(songCount))
 
             if inputFile == inputTrainingFile:
                 threshold = numTrainingUsers + numTestUsers
@@ -91,6 +90,7 @@ class Data:
         0 : Song counts
         1 : Divide each user count by that users maximum count
         2 : Normalize user counts (i.e. divide each entry by sum of this user's counts)
+        3 : Binary counts (1 if listened, 0 otherwise)
         """
         if ratingType == 0:
             self.R = self.C.tocsc()
