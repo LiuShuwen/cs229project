@@ -1,4 +1,3 @@
-## We need a data class for this shiz
 import numpy as np
 import scipy.sparse as sparse
 import sys
@@ -17,6 +16,7 @@ class Data:
         self.C = None # Counts matrix
         self.R = None # Rating matrix
         self.C_hidden = None
+        self.totalSongs = []
         self.loadData(inputTrainingFile, numTrainingUsers, inputTestFile, inputHiddenTestFile, numTestUsers)
         self.setRatingType(ratingType)
 
@@ -31,6 +31,7 @@ class Data:
         rows = []
         columns = []
         entries = []
+        totalSongs = []
 
         threshold = numTrainingUsers
 
@@ -46,6 +47,8 @@ class Data:
 
                 # Fill in indices
                 if userid not in self.userIdToIndex:
+                    if userIndex % 10000 == 0:
+                        totalSongs.append(songIndex)
                     if userIndex >= threshold: break # If you encounter a new user, and userIndex is equal to your threshold, skip to next file
                     else:
                         if hiddenFlag: break # we are iterating over hidden users so stop this as soon as you see a new user
@@ -83,6 +86,8 @@ class Data:
 
             f.close()
 
+            self.totalSongs = totalSongs
+
     def setRatingType(self, ratingType=0):
         """
         Transform R to a matrix of "ratings" rather than song counts.
@@ -119,6 +124,11 @@ class Data:
             maxDiag = sparse.diags(invMaxVec.tolist()[0], 0)
             self.R = maxDiag * self.C
             self.R.data = np.exp(self.R.data)
+            self.R = self.R.tocsc()
+
+        if ratingType == 5:
+            self.R = self.C
+            self.R.data = np.log(self.R.data + 1)
             self.R = self.R.tocsc()
 
 

@@ -26,7 +26,11 @@ start = time.time()
 
 print "Loading Data..."
 
-ratings = data.Data(inputTrainingFile, numTrainingUsers, inputFileTest, inputFileHiddenTest, numTestUsers, 3)
+ratingType = 0
+
+print "Using rating type", ratingType
+
+ratings = data.Data(inputTrainingFile, numTrainingUsers, inputFileTest, inputFileHiddenTest, numTestUsers, ratingType)
 
 end = time.time()
 
@@ -39,79 +43,89 @@ print ratings.getInfo()
 
 # parameters
 alphaFlag = True
-alpha = None
-if alpha == None:
-    alphaFlag = False
+mapList = []
+for alpha in range(1, 10, 1):
+    alpha = float(alpha)/10
+    print alpha
+    if alpha == None:
+        alphaFlag = False
 
-print "Normalizing R..."
+    print "Normalizing R..."
 
-start = time.time()
+    start = time.time()
 
-# Get diagonal matrix of inverse user norms
-normVec = np.sqrt(ratings.R.multiply(ratings.R).sum(1))
+    # Get diagonal matrix of inverse user norms
+    normVec = np.sqrt(ratings.R.multiply(ratings.R).sum(1))
 
-# Normalize rows of R (with weighting alpha)
-if alphaFlag:
-    Rn1 = ratings.R.multiply(scipy.sparse.csc_matrix(1/np.power(normVec, 2*alpha)))
-    Rn2 = ratings.R.multiply(scipy.sparse.csc_matrix(1/np.power(normVec, 2*(1 - alpha))))
-else:
-    Rn = normalize(ratings.R, norm='l2', axis=1)
+    # Normalize rows of R (with weighting alpha)
+    if alphaFlag:
+        Rn1 = ratings.R.multiply(scipy.sparse.csc_matrix(1/np.power(normVec, 2*alpha)))
+        Rn2 = ratings.R.multiply(scipy.sparse.csc_matrix(1/np.power(normVec, 2*(1 - alpha))))
+    else:
+        # CHANGED THIS TO L1 NORM
+        Rn = normalize(ratings.R, norm='l2', axis=1)
 
-end = time.time()
+    end = time.time()
 
-print "Normalized R in %s seconds!" % (end - start)
+    print "Normalized R in %s seconds!" % (end - start)
 
-start = time.time()
+    start = time.time()
 
-print "Computing Cosine Similarity Matrix..."
+    print "Computing Cosine Similarity Matrix..."
 
-# Compute Cosine User-User Matrix
-if alphaFlag:
-    CosineUser = Rn1 * Rn2.transpose()
-else:
-    CosineUser = Rn * Rn.transpose()
+    # Compute Cosine User-User Matrix
+    if alphaFlag:
+        CosineUser = Rn1 * Rn2.transpose()
+    else:
+        CosineUser = Rn * Rn.transpose()
 
-end = time.time()
+    end = time.time()
 
-print "Computed Cosine Similarity Matrix in %s seconds!" % (end - start)
+    print "Computed Cosine Similarity Matrix in %s seconds!" % (end - start)
 
-start = time.time()
+    start = time.time()
 
-print "Convert to Binary..."
+    print "Convert to Binary..."
 
-# Binary array of the counts
-BinaryCount = ratings.C.astype(bool).astype(int)
+    # Binary array of the counts
+    BinaryCount = ratings.C.astype(bool).astype(float)
 
-print "Computing Scores..."
+    print "Computing Scores..."
 
-# Scores
-scores = CosineUser[ratings.numUsersInTraining:,:] * BinaryCount
-scores = np.asarray(scores.todense())
+    # Scores
+    scores = CosineUser[ratings.numUsersInTraining:,:] * BinaryCount
+    scores = np.asarray(scores.todense())
 
-end = time.time()
+    end = time.time()
 
-print "Computed Scores in %s seconds!" % (end - start)
+    print "Computed Scores in %s seconds!" % (end - start)
 
-print scores.shape
+    ## PREDICTION
+    print "Predicting unseen songs"
 
-## PREDICTION
-print "Predicting unseen songs"
+    #numPredictions = 500
 
-numPredictions = 500
 
-start = time.time()
+    for numPredictions in range(500,501):
+        print "numPredictions", numPredictions
+        start = time.time()
 
-mAP = 0.
-testIdx = 0
-for testUser in range(ratings.numUsersInTraining, ratings.numUsers):
-  # sorting scores to get |numPredictions| highest song indices
-  ind = np.argpartition(scores[testIdx, :], -numPredictions)[-numPredictions:]
-  predictions = ind[np.argsort(scores[testIdx, ind])][::-1]
-  mAP += ratings.averagePrecision(testUser, predictions, numPredictions)
-  testIdx += 1
+        mAP = 0.
+        testIdx = 0
+        for testUser in range(ratings.numUsersInTraining, ratings.numUsers):
+          # sorting scores to get |numPredictions| highest song indices
+          ind = np.argpartition(scores[testIdx, :], -numPredictions)[-numPredictions:]
+          predictions = ind[np.argsort(scores[testIdx, ind])][::-1]
+          mAP += ratings.averagePrecision(testUser, predictions, numPredictions)
+          testIdx += 1
 
-end = time.time()
+        end = time.time()
 
-mAP /= (testIdx)
+        mAP /= (testIdx)
 
-print "Mean Average Precision at %d: %f; computed in %f" % (numPredictions, mAP, end - start)
+        mapList.append(mAP)
+
+        print "Mean Average Precision at %d: %f; computed in %f" % (numPredictions, mAP, end - start)
+
+
+print mapList

@@ -68,22 +68,3 @@ class Recommender():
                                reverse = True)
 
     print "Done loading %d triplets!" % self.numTriplets
-
-  def GetCosineSimilarityMatrix(self):
-    """
-    return Cosine Similarity Matrix where rating for a song is defined as songCount/maxSongCount
-    """
-    # Create diagonal matrix of row (user) norms
-    pass
-
-  def countToRating(self, userid):
-    #maxSongCount1 = max( self.userHistory[userid1][song] for song in self.userHistory[userid1])
-    #maxSongCount2 = max( self.userHistory[userid2][song] for song in self.userHistory[userid2])
-    pass
-
-  def recommend(self, newFile):
-    """
-    Method that, based on the data read in by self.readTriplets() and ## RECOMMENDING ALGORITHM ##
-    as defined in #########, will recommend songs to the users featuring in |newFile|
-    """
-    pass

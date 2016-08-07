@@ -26,7 +26,7 @@ start = time.time()
 
 print "Loading Data..."
 
-ratings = data.Data(inputTrainingFile, numTrainingUsers, inputFileTest, inputFileHiddenTest, numTestUsers, 3)
+ratings = data.Data(inputTrainingFile, numTrainingUsers, inputFileTest, inputFileHiddenTest, numTestUsers, 5)
 
 end = time.time()
 
@@ -73,7 +73,7 @@ start = time.time()
 print "Convert to Binary..."
 
 # Binary array of the counts
-BinaryCount = ratings.C.astype(bool).astype(int)
+BinaryCount = ratings.C.astype(bool).astype(float)
 
 print "Computing Scores..."
 
@@ -90,21 +90,30 @@ print scores.shape
 ## PREDICTION
 print "Predicting unseen songs"
 
-numPredictions = 500
+#numPredictions = 500
 
-start = time.time()
+mapList = []
 
-mAP = 0.
-testIdx = 0
-for testUser in range(ratings.numUsersInTraining, ratings.numUsers):
-  # sorting scores to get |numPredictions| highest song indices
-  ind = np.argpartition(scores[testIdx, :], -numPredictions)[-numPredictions:]
-  predictions = ind[np.argsort(scores[testIdx, ind])][::-1]
-  mAP += ratings.averagePrecision(testUser, predictions, numPredictions)
-  testIdx += 1
+for numPredictions in range(500,501):
+    print "numPredictions", numPredictions
 
-end = time.time()
+    start = time.time()
 
-mAP /= (testIdx)
+    mAP = 0.
+    testIdx = 0
+    for testUser in range(ratings.numUsersInTraining, ratings.numUsers):
+      # sorting scores to get |numPredictions| highest song indices
+      ind = np.argpartition(scores[testIdx, :], -numPredictions)[-numPredictions:]
+      predictions = ind[np.argsort(scores[testIdx, ind])][::-1]
+      mAP += ratings.averagePrecision(testUser, predictions, numPredictions)
+      testIdx += 1
 
-print "Mean Average Precision at %d: %f; computed in %f" % (numPredictions, mAP, end - start)
+    end = time.time()
+
+    mAP /= (testIdx)
+
+    mapList.append(mAP)
+
+    print "Mean Average Precision at %d: %f; computed in %f" % (numPredictions, mAP, end - start)
+
+print mapList
